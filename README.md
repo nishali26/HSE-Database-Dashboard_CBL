@@ -1,324 +1,134 @@
-# CBL LU Sukkur Plant — HSE Management System
+# 🛡️ CBL LU Sukkur Plant — HSE Management System & Database Dashboard
 
-Full-stack Health, Safety, and Environment (HSE) management system for Continental Biscuits Limited's LU Sukkur plant.
+[![Domain](https://img.shields.io/badge/Domain-HSE%20%26%20KPI%20Analytics-991B1B?style=for-the-badge)](#%E2%B8%8F-overview--problem-statement)
+[![Organization](https://img.shields.io/badge/Plant-Continental%20Biscuits%20Limited-D97706?style=for-the-badge)](#%E2%B8%8F-overview--problem-statement)
+[![Stack](https://img.shields.io/badge/Architecture-Full--Stack%20Web-0F766E?style=for-the-badge)](#%EF%B8%8F-detailed-tech-stack)
+[![GitHub](https://img.shields.io/badge/GitHub-nishali26-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/nishali26)
 
-| Piece | Path | Port |
-|---|---|---|
-| Backend API (Express + Sequelize + MySQL) | `backend/` | **5000** |
-| Management Dashboard (React 19 + Vite) | `apps/management-dashboard/` | **5173** |
-| Shared packages | `packages/*` (`@cbl/api`, `@cbl/auth`, `@cbl/ui`, …) | — |
-| Enterprise SQL reference (not the primary local path) | `database/schema/` | — |
-
-> **Primary runnable path:** Sequelize migrations against MySQL database `cbl_db` via `backend/`.  
-> The SQL under `database/schema/` is kept as enterprise reference and is **not** required for local/IT bootstrap.
+A centralized, data-driven **Health, Safety & Environment (HSE) Management System and Database Dashboard** designed for **Continental Biscuits Limited (CBL) – LU Sukkur Plant** to digitize workplace safety reporting, streamline Corrective & Preventive Actions (CAPA), and provide real-time KPI visibility for supervisors and management.
 
 ---
 
-## Quick Start (Windows)
+## 📋 Table of Contents
 
-If MySQL says `Access denied for user 'root'@'localhost'`, use Docker MySQL:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\backend\scripts\setup-windows.ps1
-```
-
-Details: [`WINDOWS_SETUP.md`](./WINDOWS_SETUP.md)
-
----
-
-## Quick Start (verified)
-
-### Prerequisites
-
-| Requirement | Version | Notes |
-|---|---|---|
-| Node.js | ≥ 18 | `node -v` |
-| npm | ≥ 9 | `npm -v` |
-| MySQL | 8.x | TCP on `127.0.0.1:3306` |
-| Redis | 7.x (optional) | App starts if Redis is down |
-
-### 1) Install dependencies
-
-```bash
-# Root (frontend workspaces + Turborepo)
-npm install
-
-# Backend
-cd backend && npm install && cd ..
-```
-
-### 2) Configure backend environment
-
-```bash
-cd backend
-cp .env.example .env
-# Edit .env — at minimum set:
-#   DB_HOST=127.0.0.1
-#   DB_PASSWORD=<your mysql password>
-#   JWT_* secrets (npm run generate:key)
-#   ENCRYPTION_KEY  (exactly 32 characters)
-#   MAIL_*          (placeholders OK for local)
-```
-
-Generate secrets:
-
-```bash
-cd backend && npm run generate:key
-```
-
-Create the database:
-
-```sql
-CREATE DATABASE IF NOT EXISTS cbl_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-> On Linux, prefer `DB_HOST=127.0.0.1` over `localhost` so Node uses TCP (unix socket may reject non-root connections).
-
-### 3) Migrate + seed (canonical commands)
-
-From `backend/`:
-
-```bash
-npm run migrate    # sequelize-cli → all 16 migrations
-npm run seed       # roles, permissions, role_permissions, superadmin, plants, departments
-```
-
-Seeders are **mostly re-run safe** (skip if data already exists). The role-permissions seeder re-syncs join rows.
-
-Default admin after seed:
-
-| Field | Value |
-|---|---|
-| Email | `superadmin@cblapp.com` |
-| Password | `Admin@123!` |
-
-> Change this password immediately in any shared or production environment.
-
-### 4) Start backend
-
-```bash
-cd backend
-npm run dev
-```
-
-Checks:
-
-```bash
-curl http://localhost:5000/api/health
-# Swagger UI:  http://localhost:5000/api/docs
-# OpenAPI JSON: http://localhost:5000/api/docs.json
-```
-
-### 5) Start frontend
-
-```bash
-# From repo root
-cp apps/management-dashboard/.env.example apps/management-dashboard/.env
-# Set VITE_API_URL=http://localhost:5000/api/v1
-# Set VITE_BYPASS_AUTH=false for real API auth
-# Add VITE_MSAL_CLIENT_ID / VITE_MSAL_TENANT_ID for Microsoft SSO
-
-npm run dev
-```
-
-Open `http://localhost:5173`.
-
-> Vite must bind `0.0.0.0` (already set in `apps/management-dashboard` via `vite --host 0.0.0.0`).
-
-**Preview login:** `VITE_BYPASS_AUTH=true` signs in as seeded superadmin with a **real JWT** against the local API. Use this until Microsoft SSO is configured (`VITE_BYPASS_AUTH=false` + Entra IDs + user in DB). See `START_HERE.md`.
+- [Overview & Problem Statement](#-overview--problem-statement)
+- [Why Digitization Matters](#-why-digitization-matters)
+- [Current Workflow vs. Gap Analysis](#-current-workflow-vs-gap-analysis)
+- [Proposed Solution & System Architecture](#-proposed-solution--system-architecture)
+- [Proposed End-to-End Digital Workflow](#-proposed-end-to-end-digital-workflow)
+- [Core HSE Modules & Standard Pattern](#-core-hse-modules--standard-pattern)
+- [Dashboard & KPI Monitoring Layer](#-dashboard--kpi-monitoring-layer)
+- [Detailed Tech Stack](#-detailed-tech-stack)
+- [Interactive UI & CSS Styling Architecture](#-interactive-ui--css-styling-architecture)
+- [Expected Benefits](#-expected-benefits)
+- [Repository Structure & Local Setup](#-repository-structure--local-setup)
+- [Role & Contribution](#-role--contribution)
 
 ---
 
-## Auth contracts
+## 🎯 Overview & Problem Statement
 
-### Email/password login
+In industrial manufacturing and plant environments like **Continental Biscuits Limited (CBL) – LU Sukkur Plant**, Health, Safety, and Environment operations directly impact **worker safety, operational continuity, regulatory compliance, risk reduction, and management accountability**.
 
-`POST /api/v1/auth/login`
+### Current Challenges
+When HSE records and KPIs are handled through manual sheets, paper forms, informal follow-ups, or disconnected files, plant teams face several operational limitations:
 
-```json
-{ "email": "superadmin@cblapp.com", "password": "Admin@123!" }
-```
+- **Scattered & Manual Records:** Safety data split across manual logs or sheets with no single source of truth.
+- **Delayed Reporting & Follow-Up:** Slow updates and manual tracking of open, overdue, and closed actions.
+- **Unclear Ownership & Accountability:** Difficulty linking departments, responsible owners, due dates, and closure outcomes.
+- **Reactive KPI Compilation:** Management KPIs compiled periodically rather than monitored in real time.
+- **Disconnected Modules:** Hazards, near misses, incidents, CAPA, training, audits, and inspections lack unified tracking.
 
-Returns `{ success, data: { user, tokens: { accessToken, refreshToken } } }` where `user` is normalized:
-
-```json
-{
-  "id": "...",
-  "name": "Super Admin",
-  "email": "superadmin@cblapp.com",
-  "roles": ["super_admin"],
-  "permissions": ["hse:view_dashboard", "..."],
-  "department_id": null,
-  "plant_id": null
-}
-```
-
-Also available:
-
-| Method | Route | Notes |
-|---|---|---|
-| `POST` | `/auth/refresh-token` | Body `{ refreshToken }` |
-| `POST` | `/auth/logout` | Bearer access token |
-| `GET` | `/auth/me` | Bearer access token → normalized user |
-
-### Microsoft SSO verify-email (frontend live mode)
-
-Frontend (`packages/api` → `authClient.verifyEmail`) calls:
-
-`POST /api/v1/auth/verify-email` with `{ email }`
-
-Success:
-
-```json
-{
-  "success": true,
-  "message": "User authorized",
-  "data": {
-    "authorized": true,
-    "email": "user@example.com",
-    "user": {
-      "id": "...",
-      "name": "...",
-      "email": "...",
-      "roles": ["..."],
-      "permissions": ["..."],
-      "department_id": null,
-      "plant_id": null
-    },
-    "tokens": {
-      "accessToken": "...",
-      "refreshToken": "..."
-    }
-  }
-}
-```
-
-Failure (unknown / inactive user): **404** `{ success: false, message: "User not authorized", data: { authorized: false } }`
-
-`GET /auth/verify-email?token=` remains for registration email-link verification and does not conflict with the POST SSO route.
+**Goal:** Replace scattered, manual HSE record-keeping with a **unified, brand-aligned digital platform** that improves visibility, accountability, and timely decision-making.
 
 ---
 
-## HSE module routes (JWT required)
+## ⚠️ Why Digitization Matters
 
-| UI Module | API |
-|---|---|
-| Hazard Reporting | `GET/POST /api/v1/hazards` |
-| Near Miss | `/api/v1/near-misses` |
-| Incident Log | `/api/v1/incidents` |
-| Action Tracker (CAPA) | `/api/v1/corrective-actions` |
-| Training | `/api/v1/trainings` |
-| Audits | `/api/v1/audits` |
-| Inspections | `/api/v1/inspections` |
-| Plants / Departments / Users / Roles | `/plants`, `/departments`, `/users`, `/roles` |
+Without a centralized digital system and live monitoring:
 
-List endpoints return **200** with an array (possibly empty) once authenticated as seeded superadmin.
-
-Performance report (working):
-
-```bash
-GET /api/v1/reports/performance?startDate=2026-01-01&endDate=2026-12-31
-```
+- **Hazards & Near Misses:** Potential hazards can remain unresolved or fail to convert into preventive actions.
+- **Incidents & CAPA:** Investigations and follow-ups can lose visibility or fall behind schedule.
+- **Training, Audits & Inspections:** Compliance tracking and training manhours/effectiveness are harder to monitor consistently.
+- **Management Visibility:** Supervisors and plant leadership cannot quickly see real-time plant safety performance, slowing risk mitigation.
 
 ---
 
-## Backend scripts
+## 🔄 Current Workflow vs. Gap Analysis
 
-From `backend/`:
+### Current Manual / Semi-Digital Workflow
+```text
+Event Occurs → Manual Report (Paper / Sheet / Verbal) → Supervisor / HSE Review
+→ Informal Action Assignment → Manual Follow-Up → Periodic Sheet Compilation → Management Meeting
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Nodemon (watches `src/**`) |
-| `npm start` | Production node |
-| `npm run migrate` | `sequelize-cli db:migrate` (uses fixed `.sequelizerc`) |
-| `npm run seed` | `sequelize-cli db:seed:all` |
-| `npm run db:fresh` | Undo all → migrate → seed |
-| `npm run generate:key` | Print JWT + encryption secrets |
-| `npm test` | Jest (many legacy tests still point at pre-refactor paths) |
-| `npm run test:integration -- --testPathPattern=auth.smoke` | Auth smoke test |
 
----
 
-## Docker Compose
++-----------------------------------------------------------------------+
+|                        FRONTEND DASHBOARD LAYER                       |
+|   LU-Branded Web Interface | Live KPI Cards | Charts | Filters | CRUD |
+|   Consistent Module Pattern: Form -> Table -> Filter -> Update -> Export|
++-----------------------------------+-----------------------------------+
+                                    |
+                                    | Authenticated Requests
+                                    v
++-----------------------------------------------------------------------+
+|                         BACKEND REST API LAYER                        |
+|   Auth (JWT / Microsoft SSO Verify-Email) | Role-Based Access Control |
+|   Endpoints for Hazards, Near Miss, Incidents, CAPA, Training, Audits |
++-----------------------------------+-----------------------------------+
+                                    |
+                                    | Structured Persistence
+                                    v
++-----------------------------------------------------------------------+
+|                       CENTRAL DATABASE LAYER                          |
+|   Unified HSE Records | Department & Plant Linkage | Status & Owners  |
++-----------------------------------------------------------------------+
 
-`docker-compose.yml` provides **mysql + redis + backend + frontend** using the Turborepo layout (`apps/management-dashboard`), not a stale `./frontend` folder.
 
-```bash
-docker compose up --build
-# then inside backend container / or host:
-#   npm run migrate && npm run seed
-```
+User Authentication: Authorized users sign in via secure authentication (JWT / Microsoft SSO verify-email flow) with role-based access.
 
-The **supported and verified** local path remains the npm commands above. Treat Compose as a convenience; validate migrate/seed after first boot.
+Dashboard Overview: Users inspect live KPI cards, indicators, and visual charts.
 
----
+Digital Event Reporting: Users submit records for Hazards, Near Misses, Incidents, Training, Audits, or Inspections through digital forms.
 
-## IT Deployment checklist
+Structured Data Storage: Entries are saved with department mapping, timestamps, ownership, and workflow status.
 
-1. **Prerequisites:** Node ≥ 18, MySQL 8, process manager (PM2/systemd), optional Redis.
-2. **Clone & install:** `npm install` at repo root; `cd backend && npm install`.
-3. **Environment:** Copy `backend/.env.example` → `.env`. Set strong `JWT_*`, `ENCRYPTION_KEY` (32 chars), real `DB_*`, `ALLOWED_ORIGINS` (production frontend origin), SMTP.
-4. **Database once:**
-   ```bash
-   mysql -h 127.0.0.1 -u root -p -e "CREATE DATABASE IF NOT EXISTS cbl_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-   cd backend && npm run migrate && npm run seed
-   ```
-5. **API process:** `pm2 start server.js --name cbl-api` (from `backend/`) or equivalent. Health: `/api/health`.
-6. **Frontend build:** From repo root, set `apps/management-dashboard/.env` with:
-   - `VITE_API_URL=https://<api-host>/api/v1`
-   - `VITE_BYPASS_AUTH=false`
-   - Real `VITE_MSAL_CLIENT_ID` / `VITE_MSAL_TENANT_ID`
-   - Then `npm run build` (Turborepo) and serve `apps/management-dashboard/dist`.
-7. **Hardening:** Change `superadmin@cblapp.com` password; disable preview bypass; restrict CORS; do not commit `.env`.
+CAPA Assignment: Corrective & preventive actions are assigned to responsible owners with clear due dates.
 
----
+Lifecycle Status Tracking: Action progress is updated across stages (Open → In Progress → Completed → Closed / Verified).
 
-## Frontend notes
+Live KPI Refresh: Dashboard metrics and charts refresh dynamically to support management reviews and decisions.
 
-- Monorepo: Turborepo + npm workspaces (`apps/*`, `packages/*`). There is **no** top-level `frontend/` directory.
-- API clients live in `packages/api/src/` (`authClient`, `client`, dashboard/report/upload helpers).
-- Auth store/hooks live in `packages/auth`.
-- LU branding (maroon / amber / cream / caramel) and module UI are intact.
+🧩 Core HSE Modules & Standard Pattern
+The platform centralizes 7 core HSE modules:
 
----
+Hazard Reporting: Identify, report, and track workplace hazards proactively.
 
-## Remaining / known gaps
+Near Miss Events: Log close-call situations to prevent future incidents.
 
-| Item | Status |
-|---|---|
-| Sequelize auth + core HSE CRUD list/create path | **Fixed** — verified locally |
-| `POST /auth/verify-email` SSO contract | **Fixed** — normalized user + tokens |
-| Migrate/seed via `npm run migrate` / `npm run seed` | **Fixed** |
-| Swagger at `/api/docs` | **Fixed** — Auth operations annotated; more JSDoc can be added per module |
-| `ra_*` reporting control-plane tables (`/reports/widgets`, `/saved`, …) | **501 TODO** — tables live in `database/schema/`, not Sequelize migrations. Performance report works. |
-| Full Microsoft Entra tenant provisioning | Out of scope — configure MSAL env vars in IT |
-| Legacy Jest tests under `backend/tests/` | Many still reference pre-refactor paths; use `auth.smoke` integration test |
-| Enterprise SQL (`database/schema/`) full import into Sequelize | Out of scope — kept as reference |
+Incident Logs: Record incidents/injuries, root causes, and investigation follow-ups.
 
----
+Action Tracker (CAPA): Assign owners, set due dates, and track corrective/preventive closure.
 
-## Smoke test commands (copy/paste)
+Training Records: Manage safety training sessions, participants, and manhours.
 
-```bash
-# Health
-curl -s http://localhost:5000/api/health
+Audit Management: Plan audits, document findings, and track remediation.
 
-# Login
-curl -s -X POST http://localhost:5000/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"superadmin@cblapp.com","password":"Admin@123!"}'
+Inspection Records: Capture routine inspection observations and compliance results.
 
-# Use accessToken from login:
-export TOKEN='<accessToken>'
+Each module follows a consistent operational pattern:
 
-curl -s http://localhost:5000/api/v1/auth/me -H "Authorization: Bearer $TOKEN"
-curl -s -X POST http://localhost:5000/api/v1/auth/verify-email \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"superadmin@cblapp.com"}'
-curl -s http://localhost:5000/api/v1/hazards -H "Authorization: Bearer $TOKEN"
-curl -s http://localhost:5000/api/docs.json   # should list OpenAPI paths
-```
+Form → Table → Filter → Update → Export
 
----
+📊 Dashboard & KPI Monitoring Layer
+Supervisors and management can monitor key plant metrics without waiting for manual monthly compilations:
 
-*Last verified: 2026-08-04 — migrate, seed, login, me, verify-email, module lists, swagger ops.*
+Total Hazards Reported and Open vs. Closed Actions
+
+Incident Counts, Categories & Risk Rating Distribution
+
+Training Activity & Manhours
+
+Audit & Inspection Status
+
+Department-Wise Trends across plant operations
