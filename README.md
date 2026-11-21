@@ -85,50 +85,85 @@ Event Occurs → Manual Report (Paper / Sheet / Verbal) → Supervisor / HSE Rev
 +-----------------------------------------------------------------------+
 
 
-User Authentication: Authorized users sign in via secure authentication (JWT / Microsoft SSO verify-email flow) with role-based access.
+## ⚡ End-to-End Digital Workflow & Operational Lifecycle
 
-Dashboard Overview: Users inspect live KPI cards, indicators, and visual charts.
+The proposed platform replaces fragmented, manual record-keeping with a structured, traceable, and real-time operational workflow across plant departments. Every step is designed to maintain data integrity, enforce accountability, and support rapid decision-making.
 
-Digital Event Reporting: Users submit records for Hazards, Near Misses, Incidents, Training, Audits, or Inspections through digital forms.
+### 1. User Authentication & Role-Based Access Control (RBAC)
+- **Secure Sign-In Flow:** Authorized plant personnel, supervisors, HSE officers, and managers authenticate through a secure access flow supporting **JSON Web Tokens (JWT)** and **Microsoft Single Sign-On (SSO) verify-email** verification.
+- **Role-Based Permissions:** Access levels and visible actions are governed by user roles so sensitive records, administrative settings, and verification steps remain protected and auditable.
+- **Session & Identity Integrity:** Verified user identity links submissions, reviews, and status changes to real accounts rather than anonymous or unverified sheets.
 
-Structured Data Storage: Entries are saved with department mapping, timestamps, ownership, and workflow status.
+### 2. Dashboard Overview & Executive Snapshot
+- **Immediate Situational Awareness:** Upon signing in, users land on a centralized dashboard displaying live **Key Performance Indicator (KPI) cards**, status indicators, and visual charts.
+- **Cross-Module Visibility:** Supervisors and leadership can inspect current plant safety health at a glance before diving into specific module tables or forms.
+- **Exception & Bottleneck Spotting:** Highlights overdue items, open actions, and shifting department trends early so teams can intervene proactively.
 
-CAPA Assignment: Corrective & preventive actions are assigned to responsible owners with clear due dates.
+### 3. Digital Event Reporting Across HSE Activities
+- **Standardized Digital Forms:** Users report safety events and operational records directly through structured web forms rather than paper sheets or ad-hoc messages.
+- **Comprehensive Coverage:** Supports digital entry for **Hazards**, **Near Miss Events**, **Incidents**, **Training Records**, **Audits**, and **Inspections**.
+- **Consistent Input Quality:** Required fields, categories, and structured inputs reduce missing details and standardize reporting across shifts and teams.
 
-Lifecycle Status Tracking: Action progress is updated across stages (Open → In Progress → Completed → Closed / Verified).
+### 4. Structured Data Storage & Relational Context
+- **Unified Central Storage:** Every submitted record is persisted into a structured central database so all HSE data lives in a single source of truth.
+- **Metadata & Context Tagging:** Each entry is stored with **department mapping**, **timestamps**, **record ownership**, and **current workflow status**.
+- **Auditability & Traceability:** Clear timestamps and structured linkages make it straightforward to trace when an event occurred, who logged it, and how it progressed.
 
-Live KPI Refresh: Dashboard metrics and charts refresh dynamically to support management reviews and decisions.
+### 5. Corrective & Preventive Action (CAPA) Assignment
+- **Actionable Follow-Through:** Findings and safety risks are translated into concrete **Corrective & Preventive Actions (CAPA)**.
+- **Clear Ownership:** Each action item is assigned to a specific responsible owner within the relevant department or function.
+- **Target Deadlines:** Explicit **due dates** set clear expectations for timely remediation and prevent tasks from lingering indefinitely.
 
-🧩 Core HSE Modules & Standard Pattern
-The platform centralizes 7 core HSE modules:
+### 6. Lifecycle Status Tracking & Verification
+- **Transparent Progression:** Action items and records move through defined lifecycle stages:
+  `Open` → `In Progress` → `Completed` → `Closed / Verified`
+- **Controlled Closure:** Moving items toward closure/verification ensures actions are not merely marked done on paper, but actually verified against the underlying risk.
+- **Accountability Trail:** Status transitions keep supervisors and owners aligned on what is pending, active, awaiting verification, or closed.
 
-Hazard Reporting: Identify, report, and track workplace hazards proactively.
+### 7. Live KPI Refresh & Data-Driven Decision Support
+- **Real-Time Metric Updates:** As new events are logged and statuses change, dashboard KPIs and charts refresh dynamically rather than relying on delayed manual compilation.
+- **Faster Management Reviews:** Supervisors and plant leadership can review up-to-date metrics during daily/weekly huddles and safety reviews.
+- **Proactive Risk Decisions:** Timely insights help allocate resources, prioritize high-risk areas, and strengthen overall plant safety governance.
 
-Near Miss Events: Log close-call situations to prevent future incidents.
+---
 
-Incident Logs: Record incidents/injuries, root causes, and investigation follow-ups.
+## 🧩 Core HSE Modules & Standardized Operational Pattern
 
-Action Tracker (CAPA): Assign owners, set due dates, and track corrective/preventive closure.
+The platform centralizes **7 core HSE modules** into one cohesive workspace so teams do not have to jump between disconnected spreadsheets or tools.
 
-Training Records: Manage safety training sessions, participants, and manhours.
+### Core HSE Modules Breakdown
 
-Audit Management: Plan audits, document findings, and track remediation.
+1. **Hazard Reporting**
+   - **Purpose:** Identify, log, and track workplace hazards proactively before they result in injury, equipment damage, or operational disruption.
+   - **Operational Value:** Encourages early floor-level hazard spotting and structured risk mitigation.
 
-Inspection Records: Capture routine inspection observations and compliance results.
+2. **Near Miss Events**
+   - **Purpose:** Capture close-call events or unsafe conditions where harm was narrowly avoided.
+   - **Operational Value:** Helps uncover latent risks early and prevent future incidents through proactive learning.
 
-Each module follows a consistent operational pattern:
+3. **Incident Logs**
+   - **Purpose:** Record workplace incidents and injuries along with root-cause analysis and investigation follow-ups.
+   - **Operational Value:** Maintains a reliable historical record and ensures lessons learned drive concrete corrective measures.
 
-Form → Table → Filter → Update → Export
+4. **Action Tracker (CAPA)**
+   - **Purpose:** Assign responsible owners, set due dates, and track the end-to-end closure of corrective and preventive actions.
+   - **Operational Value:** Turns safety findings and audit/inspection observations into measurable, time-bound execution.
 
-📊 Dashboard & KPI Monitoring Layer
-Supervisors and management can monitor key plant metrics without waiting for manual monthly compilations:
+5. **Training Records**
+   - **Purpose:** Manage safety training sessions, participant attendance, and logged training **manhours**.
+   - **Operational Value:** Helps verify workforce readiness, compliance coverage, and training engagement across teams.
 
-Total Hazards Reported and Open vs. Closed Actions
+6. **Audit Management**
+   - **Purpose:** Plan HSE audits, document audit findings, and track remediation progress through to completion.
+   - **Operational Value:** Improves audit readiness, follow-up discipline, and systematic compliance tracking.
 
-Incident Counts, Categories & Risk Rating Distribution
+7. **Inspection Records**
+   - **Purpose:** Capture routine workplace inspection observations, checklist outcomes, and compliance findings.
+   - **Operational Value:** Standardizes recurring safety checks and links inspection issues directly to follow-up actions.
 
-Training Activity & Manhours
+### Consistent Operational Pattern Across All Modules
 
-Audit & Inspection Status
+Every module follows a uniform, predictable interaction model so users can learn the system quickly and work consistently across all workflows:
 
-Department-Wise Trends across plant operations
+```text
+Form (Data Entry) → Table (Structured View) → Filter (Slice & Search) → Update (Status & CAPA) → Export (Reporting)
